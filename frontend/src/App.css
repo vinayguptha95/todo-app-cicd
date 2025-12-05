@@ -1,0 +1,50 @@
+.App {
+  min-height: 100vh;
+}
+
+.todo-app {
+  padding: 20px 0;
+}
+
+.card {
+  border-radius: 10px;
+  border: none;
+}
+
+.list-group-item {
+  border-left: none;
+  border-right: none;
+  transition: background-color 0.2s;
+}
+
+.list-group-item:hover {
+  background-color: #f8f9fa;
+}
+
+.list-group-item:first-child {
+  border-top: none;
+}
+
+.list-group-item:last-child {
+  border-bottom: none;
+}
+
+.btn-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+.text-decoration-line-through {
+  opacity: 0.7;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0 10px;
+  }
+  
+  .btn-sm {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.8rem;
+  }
+}
