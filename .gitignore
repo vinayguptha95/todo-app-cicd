@@ -1,24 +1,160 @@
-# Compiled class file
-*.class
+# Dependencies
+node_modules/
+.npm
+.pnpm
+.yarn/
+.yarn.lock
+package-lock.json
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# Log file
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
+
+# Build outputs
+dist/
+build/
+out/
+.next/
+.nuxt/
+.gatsby/
+.cache/
+.turbo/
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Logs
+logs/
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# BlueJ files
-*.ctxt
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
 
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
+# Diagnostic reports
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
-# Package Files #
-*.jar
-*.war
-*.nar
-*.ear
+# Local development
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.idea
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+
+
+# Kubernetes
+.kube/
+kubeconfig
+*.kubeconfig
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Secrets
+secrets.yaml
+secrets.yml
+*.pem
+*.key
+*.crt
+*.csr
+
+# Misc
+*.tgz
+*.gz
 *.zip
-*.tar.gz
+*.tar
 *.rar
+*.7z
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
-hs_err_pid*
-replay_pid*
+# Project specific
+*.log
+*.pid
+*.seed
+*.pid.lock
+
+# Testing
+.nyc_output
+coverage/
+.nyc_output
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# System files
+desktop.ini
+
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Windows
+desktop.ini
+
+# Mac
+.DS_Store
+
+# Linux
+*~
+
+# Azure
+.azure/
+
+# Local development files
+.local/
+.devcontainer/
+
+# Project specific ignores
+# These are for the todo-app project
+
+# Backend
+backend/.env
+backend/.env.*
+backend/node_modules/
+
+# Frontend
+frontend/.env
+frontend/.env.*
+frontend/node_modules/
+frontend/build/
+frontend/.cache/
+
+# Kubernetes configs
+k8s/secrets/
+k8s/*.env

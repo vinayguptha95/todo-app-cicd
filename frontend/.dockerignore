@@ -1,0 +1,129 @@
+# Dependencies
+node_modules/
+.npm
+.pnpm
+.yarn/
+
+# Environment
+.env
+.env.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build outputs
+build/
+dist/
+out/
+.next/
+.nuxt/
+.gatsby/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage
+coverage/
+.nyc_output
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Docker
+.dockerignore
+Dockerfile*
+docker-compose*
+
+# Kubernetes
+kubeconfig
+*.kubeconfig
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Test files
+test/
+__tests__/
+__mocks__/
+*.test.js
+*.spec.js
+*.test.jsx
+*.spec.jsx
+
+# Documentation
+*.md
+*.txt
+LICENSE
+
+# Source maps
+*.map
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# Caches
+.cache/
+.parcel-cache/
+
+# React/Vite specific
+.vite/
+.vitest/
+
+# ESLint/Prettier
+.eslintcache
+.prettierignore
+.prettierrc
+
+# TypeScript
+.tsbuildinfo
+
+# Project files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Public directory (we'll copy from build)
+public/
+
+# Source files (we'll use the built version)
+src/
+
+# Exclude everything except what's needed for production build
+# Keep only: package.json, public/index.html (for context), and build will be created
+
+# Exclude all then include specific
+*
+!package.json
+!package-lock.json
+!public/
+!src/
+!nginx.conf
