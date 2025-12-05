@@ -24,7 +24,7 @@ spec:
     spec:
       containers:
       - name: backend
-        image: placeholder/backend:latest
+        image: todoacr2086.azurecr.io/todo-backend:latest
         ports:
         - containerPort: 5000
         env:
@@ -82,7 +82,7 @@ spec:
     spec:
       containers:
       - name: backend
-        image: placeholder/backend:latest
+        image: todoacr2086.azurecr.io/todo-backend:latest
         ports:
         - containerPort: 5000
         env:
@@ -125,7 +125,7 @@ spec:
     spec:
       containers:
       - name: backend
-        image: placeholder/backend:latest
+        image: todoacr2086.azurecr.io/todo-backend:latest
         ports:
         - containerPort: 5000
         env:
