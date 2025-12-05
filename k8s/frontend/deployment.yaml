@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: frontend-deployment
   labels:
-    app: todo-app
+    app: todoapp
     component: frontend
 spec:
   replicas: 2

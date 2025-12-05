@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: frontend-deployment-blue
   labels:
-    app: todo-app
+    app: todoapp
     component: frontend
     color: blue
 spec:
