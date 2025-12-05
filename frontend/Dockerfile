@@ -10,6 +10,9 @@ RUN npm ci
 # Copy source
 COPY . .
 
+# FIX: react-scripts missing execute permissions
+RUN chmod +x node_modules/.bin/react-scripts
+
 # Build React app
 RUN npm run build
 
