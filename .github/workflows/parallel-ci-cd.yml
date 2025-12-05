@@ -242,6 +242,12 @@ jobs:
                     OLD_COLOR=$([ "$NEW_COLOR" = blue ] && echo green || echo blue)
                  kubectl scale deployment backend-deployment-$OLD_COLOR --replicas=0 || true
 
+
+      - name: "🗄️ Deploy Frontend Service"
+        run: |
+            kubectl apply -f k8s/frontend/service.yaml
+            kubectl get svc frontend-service
+
       - name: "🔵🟢 Blue-Green Frontend Deployment"
         run: |
           CURRENT_COLOR=$(kubectl get service frontend-service -o jsonpath='{.spec.selector.color}' 2>/dev/null || echo blue)
