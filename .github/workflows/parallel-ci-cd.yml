@@ -1,5 +1,6 @@
 name: Parallel CI/CD Pipeline
 
+# Trigger on push and pull request to main branch, only for relevant paths
 on:
   push:
     branches: [main]
@@ -15,10 +16,12 @@ on:
       - 'frontend/**'
       - 'k8s/**'
 
+# Avoid duplicate runs
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Permissions
 permissions:
   actions: read
   contents: read
@@ -37,7 +40,7 @@ jobs:
     name: "🔧 Backend Pipeline"
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    
+
     steps:
       - name: "📥 Checkout code"
         uses: actions/checkout@v4
@@ -114,9 +117,13 @@ jobs:
 
       - name: "📤 Upload Trivy SARIF Results (Backend)"
         if: ${{ always() }}
-        uses: github/codeql-action/upload-sarif@v4
-        with:
-          sarif_file: 'trivy-backend-results.sarif'
+        run: |
+          if [ -f trivy-backend-results.sarif ]; then
+            echo "Uploading backend SARIF..."
+            gh codeql upload-sarif trivy-backend-results.sarif
+          else
+            echo "No backend SARIF file found, skipping upload."
+          fi
 
   # =======================
   # FRONTEND PIPELINE
@@ -125,7 +132,7 @@ jobs:
     name: "🎨 Frontend Pipeline"
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    
+
     steps:
       - name: "📥 Checkout code"
         uses: actions/checkout@v4
@@ -202,9 +209,13 @@ jobs:
 
       - name: "📤 Upload Trivy SARIF Results (Frontend)"
         if: ${{ always() }}
-        uses: github/codeql-action/upload-sarif@v4
-        with:
-          sarif_file: 'trivy-frontend-results.sarif'
+        run: |
+          if [ -f trivy-frontend-results.sarif ]; then
+            echo "Uploading frontend SARIF..."
+            gh codeql upload-sarif trivy-frontend-results.sarif
+          else
+            echo "No frontend SARIF file found, skipping upload."
+          fi
 
   # =======================
   # DEPLOYMENT TO AKS
@@ -215,7 +226,7 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    
+
     steps:
       - name: "📥 Checkout code"
         uses: actions/checkout@v4
