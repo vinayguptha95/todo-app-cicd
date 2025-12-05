@@ -86,7 +86,7 @@ jobs:
       - name: "🏗️ Build and Push Backend Docker Image"
         uses: docker/build-push-action@v5
         with:
-          context: ./backend-restored/backend
+          context: ./backend-restored/
           push: true
           platforms: linux/amd64
           tags: |
@@ -158,7 +158,7 @@ jobs:
       - name: "🏗️ Build and Push Frontend Image"
         uses: docker/build-push-action@v5
         with:
-          context: ./frontend-restored/frontend
+          context: ./frontend-restored/
           push: true
           platforms: linux/amd64
           tags: |
