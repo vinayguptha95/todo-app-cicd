@@ -206,6 +206,12 @@ jobs:
         run: |
           kubectl apply -f k8s/backend/mongodb.yaml
           kubectl rollout status deployment/mongodb --timeout=120s
+    
+      - name: "🗄️ Deploy Backend Service"
+        run: |
+            kubectl apply -f k8s/backend/service.yaml
+            kubectl get svc backend-service
+
 
       - name: "Install yq"
         run: |
