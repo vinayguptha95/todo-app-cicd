@@ -22,14 +22,14 @@ spec:
     spec:
       containers:
       - name: backend
-        image: placeholder/backend:latest
+        image: todoacr2086.azurecr.io/todo-backend:latest
         ports:
         - containerPort: 5000
         env:
         - name: PORT
           value: "5000"
         - name: MONGODB_URI
-          value: "mongodb://mongodb-service:27017/todoapp"
+          value: "mongodb://mongodb-service:27017/tododb"
         - name: NODE_ENV
           value: "production"
         resources:

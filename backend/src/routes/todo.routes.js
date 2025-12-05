@@ -1,4 +1,23 @@
-// This file can be used to modularize routes in the future
+// backend/routes/todos.js
 module.exports = (app, Todo) => {
-    // Routes will be moved here from index.js in future
+    // Get all todos
+    app.get('/api/todos', async (req, res) => {
+        try {
+            const todos = await Todo.find();
+            res.json(todos);
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // Add a new todo
+    app.post('/api/todos', async (req, res) => {
+        try {
+            const newTodo = new Todo(req.body);
+            await newTodo.save();
+            res.status(201).json(newTodo);
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
 };

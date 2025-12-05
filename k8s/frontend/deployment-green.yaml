@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: placeholder/frontend:latest
+        image: todoacr2086.azurecr.io/todo-frontend:latest
         ports:
         - containerPort: 80
         env:
