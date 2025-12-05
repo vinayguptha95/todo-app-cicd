@@ -57,7 +57,7 @@ kind: Deployment
 metadata:
   name: frontend-deployment-blue
   labels:
-    app: todo-app
+    app: todoapp
     component: frontend
     color: blue
 spec:
@@ -96,7 +96,7 @@ kind: Deployment
 metadata:
   name: frontend-deployment-green
   labels:
-    app: todo-app
+    app: todoapp
     component: frontend
     color: green
 spec:

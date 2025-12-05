@@ -29,7 +29,7 @@ spec:
         - name: PORT
           value: "5000"
         - name: MONGODB_URI
-          value: "mongodb://mongodb-service:27017/tododb"
+          value: "mongodb://mongodb-service:27017/todoapp"
         - name: NODE_ENV
           value: "production"
         resources:

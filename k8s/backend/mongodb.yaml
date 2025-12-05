@@ -14,7 +14,7 @@ kind: Deployment
 metadata:
   name: mongodb
   labels:
-    app: todo-app
+    app: todoapp
     component: database
 spec:
   replicas: 1
@@ -35,7 +35,7 @@ spec:
         - containerPort: 27017
         env:
         - name: MONGO_INITDB_DATABASE
-          value: tododb        # <-- changed to match backend
+          value: todoapp       # <-- changed to match backend
         volumeMounts:
         - name: mongodb-storage
           mountPath: /data/db
@@ -56,7 +56,7 @@ kind: Service
 metadata:
   name: mongodb-service
   labels:
-    app: todo-app
+    app: todoapp
     component: database
 spec:
   selector:

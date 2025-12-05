@@ -3,7 +3,7 @@ kind: Service
 metadata:
   name: frontend-service
   labels:
-    app: todo-app
+    app: todoapp
     component: frontend
 spec:
   selector:

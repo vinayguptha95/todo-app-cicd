@@ -11,7 +11,7 @@ app.use(cors());
 app.use(express.json());
 
 // MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://mongodb-service:27017/tododb', {
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://mongodb-service:27017/todoapp', {
     useNewUrlParser: true,
     useUnifiedTopology: true
 })
