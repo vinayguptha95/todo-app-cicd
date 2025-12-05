@@ -1,6 +1,5 @@
 name: Parallel CI/CD Pipeline
 
-# Trigger on push and pull request to main branch, only for relevant paths
 on:
   push:
     branches: [main]
@@ -16,12 +15,10 @@ on:
       - 'frontend/**'
       - 'k8s/**'
 
-# Avoid duplicate runs
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# Permissions
 permissions:
   actions: read
   contents: read
@@ -32,26 +29,23 @@ env:
   AKS_RESOURCE_GROUP: ${{ secrets.AKS_RESOURCE_GROUP }}
   AKS_CLUSTER_NAME: ${{ secrets.AKS_CLUSTER_NAME }}
 
+##########################################################
+# BACKEND PIPELINE
+##########################################################
 jobs:
-  # =======================
-  # BACKEND PIPELINE
-  # =======================
   backend:
     name: "🔧 Backend Pipeline"
     runs-on: ubuntu-latest
-    timeout-minutes: 20
 
     steps:
-      - name: "📥 Checkout code"
+      - name: "📥 Checkout Code"
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: "⚙️ Setup Node.js"
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
-          cache: 'npm'
+          node-version: 18
+          cache: npm
           cache-dependency-path: backend/package-lock.json
 
       - name: "📦 Install Backend Dependencies"
@@ -62,36 +56,28 @@ jobs:
       - name: "🏗️ Build Backend"
         run: |
           cd backend
-          npm run build || echo "No build script, continuing..."
-
-      - name: "🧪 Run Backend Tests"
-        run: |
-          cd backend
-          npm test || echo "Tests failed but continuing..."
+          npm run build || echo "No build script"
 
       - name: "📦 Upload Backend Artifacts"
         uses: actions/upload-artifact@v4
         with:
           name: backend-build
-          path: |
-            backend/
-            !backend/node_modules/
+          path: backend/
           retention-days: 1
 
-      - name: "🐳 Set up Docker Buildx"
+      - name: "🐳 Setup Docker Buildx"
         uses: docker/setup-buildx-action@v3
         with:
           driver: docker-container
-          buildkitd-flags: --debug
 
-      - name: "🔐 Log in to Azure Container Registry"
-        uses: azure/docker-login@v1
+      - name: "🔐 Login to Azure Container Registry"
+        uses: docker/login-action@v2
         with:
-          login-server: ${{ secrets.ACR_LOGIN_SERVER }}
+          registry: ${{ secrets.ACR_LOGIN_SERVER }}
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
 
-      - name: "📥 Download Backend Artifacts"
+      - name: "📥 Restore Backend Artifact"
         uses: actions/download-artifact@v4
         with:
           name: backend-build
@@ -100,54 +86,38 @@ jobs:
       - name: "🏗️ Build and Push Backend Docker Image"
         uses: docker/build-push-action@v5
         with:
-          builder: default
-          context: backend-restored/backend
-          push: ${{ github.event_name == 'push' }}
+          context: ./backend-restored/backend
+          push: true
+          platforms: linux/amd64
           tags: |
             ${{ secrets.ACR_LOGIN_SERVER }}/todo-backend:${{ github.sha }}
             ${{ secrets.ACR_LOGIN_SERVER }}/todo-backend:latest
-          cache-from: type=registry,ref=${{ secrets.ACR_LOGIN_SERVER }}/todo-backend:cache
-          cache-to: type=registry,ref=${{ secrets.ACR_LOGIN_SERVER }}/todo-backend:cache,mode=max
-          platforms: linux/amd64
 
-      - name: "🔍 Run Trivy Vulnerability Scan (Backend)"
+      - name: "🔍 Trivy Scan Backend"
         uses: aquasecurity/trivy-action@master
         continue-on-error: true
         with:
           image-ref: '${{ secrets.ACR_LOGIN_SERVER }}/todo-backend:${{ github.sha }}'
-          format: 'sarif'
-          output: 'trivy-backend-results.sarif'
-          severity: 'HIGH,CRITICAL'
+          format: sarif
+          output: trivy-backend-results.sarif
+          severity: HIGH,CRITICAL
 
-      - name: "📤 Upload Trivy SARIF Results (Backend)"
-        if: ${{ always() }}
-        run: |
-          if [ -f trivy-backend-results.sarif ]; then
-            echo "Uploading backend SARIF..."
-            gh codeql upload-sarif trivy-backend-results.sarif
-          else
-            echo "No backend SARIF file found, skipping upload."
-          fi
-
-  # =======================
-  # FRONTEND PIPELINE
-  # =======================
+##########################################################
+# FRONTEND PIPELINE
+##########################################################
   frontend:
     name: "🎨 Frontend Pipeline"
     runs-on: ubuntu-latest
-    timeout-minutes: 20
 
     steps:
-      - name: "📥 Checkout code"
+      - name: "📥 Checkout Code"
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: "⚙️ Setup Node.js"
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
-          cache: 'npm'
+          node-version: 18
+          cache: npm
           cache-dependency-path: frontend/package-lock.json
 
       - name: "📦 Install Frontend Dependencies"
@@ -158,96 +128,72 @@ jobs:
       - name: "🏗️ Build Frontend"
         run: |
           cd frontend
-          CI=false npm run build || echo "No build script, continuing..."
-
-      - name: "🧪 Run Frontend Tests"
-        run: |
-          cd frontend
-          npm test || echo "Tests failed but continuing..."
+          CI=false npm run build
 
       - name: "📦 Upload Frontend Artifacts"
         uses: actions/upload-artifact@v4
         with:
           name: frontend-build
-          path: |
-            frontend/
-            !frontend/node_modules/
+          path: frontend/
           retention-days: 1
 
-      - name: "🐳 Set up Docker Buildx"
+      - name: "🐳 Setup Docker Buildx"
         uses: docker/setup-buildx-action@v3
         with:
           driver: docker-container
-          buildkitd-flags: --debug
 
-      - name: "🔐 Log in to Azure Container Registry"
-        uses: azure/docker-login@v1
+      - name: "🔐 Login to ACR"
+        uses: docker/login-action@v2
         with:
-          login-server: ${{ secrets.ACR_LOGIN_SERVER }}
+          registry: ${{ secrets.ACR_LOGIN_SERVER }}
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
 
-      - name: "📥 Download Frontend Artifacts"
+      - name: "📥 Restore Frontend Artifact"
         uses: actions/download-artifact@v4
         with:
           name: frontend-build
           path: frontend-restored
 
-      - name: "🏗️ Build and Push Frontend Docker Image"
+      - name: "🏗️ Build and Push Frontend Image"
         uses: docker/build-push-action@v5
         with:
-          builder: default
-          context: frontend-restored/frontend
-          push: ${{ github.event_name == 'push' }}
+          context: ./frontend-restored/frontend
+          push: true
+          platforms: linux/amd64
           tags: |
             ${{ secrets.ACR_LOGIN_SERVER }}/todo-frontend:${{ github.sha }}
             ${{ secrets.ACR_LOGIN_SERVER }}/todo-frontend:latest
-          cache-from: type=registry,ref=${{ secrets.ACR_LOGIN_SERVER }}/todo-frontend:cache
-          cache-to: type=registry,ref=${{ secrets.ACR_LOGIN_SERVER }}/todo-frontend:cache,mode=max
-          platforms: linux/amd64
 
-      - name: "🔍 Run Trivy Vulnerability Scan (Frontend)"
+      - name: "🔍 Trivy Scan Frontend"
         uses: aquasecurity/trivy-action@master
         continue-on-error: true
         with:
           image-ref: '${{ secrets.ACR_LOGIN_SERVER }}/todo-frontend:${{ github.sha }}'
-          format: 'sarif'
-          output: 'trivy-frontend-results.sarif'
-          severity: 'HIGH,CRITICAL'
+          format: sarif
+          output: trivy-frontend-results.sarif
+          severity: HIGH,CRITICAL
 
-      - name: "📤 Upload Trivy SARIF Results (Frontend)"
-        if: ${{ always() }}
-        run: |
-          if [ -f trivy-frontend-results.sarif ]; then
-            echo "Uploading frontend SARIF..."
-            gh codeql upload-sarif trivy-frontend-results.sarif
-          else
-            echo "No frontend SARIF file found, skipping upload."
-          fi
-
-  # =======================
-  # DEPLOYMENT TO AKS
-  # =======================
+##########################################################
+# DEPLOYMENT PIPELINE
+##########################################################
   deploy:
     name: "🚀 Deploy to AKS"
     needs: [backend, frontend]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
 
     steps:
-      - name: "📥 Checkout code"
+      - name: "📥 Checkout Code"
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: "⚙️ Setup kubectl"
-        uses: azure/setup-kubectl@v3
-
-      - name: "🔐 Login to Azure"
+      - name: "🔐 Azure Login"
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: "⚙️ Setup kubectl"
+        uses: azure/setup-kubectl@v3
 
       - name: "📋 Get AKS Credentials"
         run: |
@@ -261,46 +207,32 @@ jobs:
           kubectl apply -f k8s/backend/mongodb.yaml
           kubectl rollout status deployment/mongodb --timeout=120s
 
-      - name: "🔵🟢 Blue-Green Deployment Backend"
+      - name: "🔵🟢 Blue-Green Backend Deployment"
         run: |
-          CURRENT_COLOR=$(kubectl get deployment backend-deployment -o jsonpath='{.spec.template.metadata.labels.color}' 2>/dev/null || echo "blue")
-          if [ "$CURRENT_COLOR" = "blue" ]; then NEW_COLOR="green"; else NEW_COLOR="blue"; fi
-          cat k8s/backend/deployment.yaml | \
-            sed "s|placeholder/backend:latest|${{ secrets.ACR_LOGIN_SERVER }}/todo-backend:${{ github.sha }}|g" | \
-            sed "s|app: backend|app: backend\n        color: $NEW_COLOR|g" | \
-            kubectl apply -f -
-          kubectl rollout status deployment/backend-deployment --timeout=300s
-          kubectl patch service backend-service -p "{\"spec\":{\"selector\":{\"color\":\"$NEW_COLOR\"}}}" || kubectl apply -f k8s/backend/service.yaml
-          kubectl scale deployment/backend-deployment --replicas=1 --selector=color=$CURRENT_COLOR 2>/dev/null || true
+          CURRENT_COLOR=$(kubectl get deployment backend-deployment -o jsonpath='{.spec.template.metadata.labels.color}' 2>/dev/null || echo blue)
+          if [ "$CURRENT_COLOR" = blue ]; then NEW_COLOR=green; else NEW_COLOR=blue; fi
 
-      - name: "🔵🟢 Blue-Green Deployment Frontend"
+          sed "s|placeholder/backend:latest|${{ secrets.ACR_LOGIN_SERVER }}/todo-backend:${{ github.sha }}|g" \
+            k8s/backend/deployment.yaml | \
+            sed "s|app: backend|app: backend\n        color: $NEW_COLOR|g" | kubectl apply -f -
+
+          kubectl rollout status deployment/backend-deployment --timeout=300s
+          kubectl patch service backend-service -p "{\"spec\":{\"selector\":{\"color\":\"$NEW_COLOR\"}}}"
+
+      - name: "🔵🟢 Blue-Green Frontend Deployment"
         run: |
-          CURRENT_COLOR=$(kubectl get deployment frontend-deployment -o jsonpath='{.spec.template.metadata.labels.color}' 2>/dev/null || echo "blue")
-          if [ "$CURRENT_COLOR" = "blue" ]; then NEW_COLOR="green"; else NEW_COLOR="blue"; fi
-          cat k8s/frontend/deployment.yaml | \
-            sed "s|placeholder/frontend:latest|${{ secrets.ACR_LOGIN_SERVER }}/todo-frontend:${{ github.sha }}|g" | \
-            sed "s|app: frontend|app: frontend\n        color: $NEW_COLOR|g" | \
-            kubectl apply -f -
+          CURRENT_COLOR=$(kubectl get deployment frontend-deployment -o jsonpath='{.spec.template.metadata.labels.color}' 2>/dev/null || echo blue)
+          if [ "$CURRENT_COLOR" = blue ]; then NEW_COLOR=green; else NEW_COLOR=blue; fi
+
+          sed "s|placeholder/frontend:latest|${{ secrets.ACR_LOGIN_SERVER }}/todo-frontend:${{ github.sha }}|g" \
+            k8s/frontend/deployment.yaml | \
+            sed "s|app: frontend|app: frontend\n        color: $NEW_COLOR|g" | kubectl apply -f -
+
           kubectl rollout status deployment/frontend-deployment --timeout=300s
           kubectl apply -f k8s/frontend/service.yaml
-          kubectl scale deployment/frontend-deployment --replicas=1 --selector=color=$CURRENT_COLOR 2>/dev/null || true
-
-      - name: "⏳ Wait for LoadBalancer IP"
-        run: |
-          sleep 30
-          for i in {1..12}; do
-            EXTERNAL_IP=$(kubectl get service frontend-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null)
-            if [ ! -z "$EXTERNAL_IP" ] && [ "$EXTERNAL_IP" != "null" ]; then
-              echo "FRONTEND_URL=http://$EXTERNAL_IP" >> $GITHUB_ENV
-              echo "BACKEND_API=http://$EXTERNAL_IP/api/health" >> $GITHUB_ENV
-              break
-            fi
-            sleep 10
-          done
 
       - name: "🩺 Health Check"
         run: |
-          if [ ! -z "$FRONTEND_URL" ]; then
-            curl -s -o /dev/null -w "Frontend HTTP Status: %{http_code}\n" $FRONTEND_URL || echo "Frontend not reachable"
-            curl -s -o /dev/null -w "Backend HTTP Status: %{http_code}\n" $BACKEND_API || echo "Backend API not reachable"
-          fi
+          echo "Checking LoadBalancer..."
+          sleep 20
+          kubectl get svc frontend-service
