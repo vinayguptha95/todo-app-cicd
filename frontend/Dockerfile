@@ -1,22 +1,22 @@
-# Build stage
+# Stage 1 — Build React App
 FROM node:18-alpine AS build
 
-WORKDIR /usr/src/app
+WORKDIR /app
 
-COPY package*.json ./
-
+# Install dependencies
+COPY package.json package-lock.json ./
 RUN npm ci
 
+# Copy source
 COPY . .
 
+# Build React app
 RUN npm run build
 
-# Production stage
+# Stage 2 — Nginx Production Image
 FROM nginx:alpine
 
-COPY --from=build /usr/src/app/build /usr/share/nginx/html
-
-COPY nginx.conf /etc/nginx/nginx.conf
+COPY --from=build /app/build /usr/share/nginx/html
 
 EXPOSE 80
 
