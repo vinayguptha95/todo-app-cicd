@@ -244,12 +244,20 @@ jobs:
 
       - name: "🔵🟢 Blue-Green Frontend Deployment"
         run: |
-              CURRENT_COLOR=$(kubectl get deployment frontend-deployment -o jsonpath='{.spec.template.metadata.labels.color}' 2>/dev/null || echo blue)
-                 NEW_COLOR=$([ "$CURRENT_COLOR" = blue ] && echo green || echo blue)
+          CURRENT_COLOR=$(kubectl get service frontend-service -o jsonpath='{.spec.selector.color}' 2>/dev/null || echo blue)
+          NEW_COLOR=$([ "$CURRENT_COLOR" = blue ] && echo green || echo blue)
 
-               yq e ".spec.template.metadata.labels.color = \"$NEW_COLOR\"" -i k8s/frontend/deployment.yaml
-               yq e "(.spec.template.spec.containers[] | select(.name==\"frontend\") | .image) = \"${{ secrets.ACR_LOGIN_SERVER }}/todo-frontend:${{ github.sha }}\"" -i k8s/frontend/deployment.yaml
+           echo "Current color: $CURRENT_COLOR"
+            echo "New color: $NEW_COLOR"
 
-                kubectl apply -f k8s/frontend/deployment.yaml
-                 kubectl rollout status deployment/frontend-deployment --timeout=300s
-                kubectl patch service frontend-service -p "{\"spec\":{\"selector\":{\"color\":\"$NEW_COLOR\"}}}"
+            DEPLOYMENT_FILE="k8s/frontend/deployment-$NEW_COLOR.yaml"
+
+            yq e "(.spec.template.spec.containers[] | select(.name==\"frontend\") | .image) = \"${{ secrets.ACR_LOGIN_SERVER }}/todo-frontend:${{ github.sha }}\"" -i $DEPLOYMENT_FILE
+
+            kubectl apply -f $DEPLOYMENT_FILE
+            kubectl rollout status deployment/frontend-deployment-$NEW_COLOR --timeout=300s
+
+            kubectl patch service frontend-service -p "{\"spec\":{\"selector\":{\"color\":\"$NEW_COLOR\"}}}"
+
+            OLD_COLOR=$([ "$NEW_COLOR" = blue ] && echo green || echo blue)
+            kubectl scale deployment frontend-deployment-$OLD_COLOR --replicas=0 || true

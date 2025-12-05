@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-deployment-blue
+  labels:
+    app: todo-app
+    component: frontend
+    color: blue
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: frontend
+      color: blue
+  template:
+    metadata:
+      labels:
+        app: frontend
+        component: frontend
+        color: blue
+        version: "1.0.0"
+    spec:
+      containers:
+      - name: frontend
+        image: placeholder/frontend:latest
+        ports:
+        - containerPort: 80
+        env:
+        - name: REACT_APP_API_URL
+          value: "http://backend-service:5000"
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
