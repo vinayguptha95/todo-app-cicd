@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: frontend-deployment
   labels:
-    app: todoapp
+    app: frontend
     component: frontend
 spec:
   replicas: 2
@@ -57,7 +57,7 @@ kind: Deployment
 metadata:
   name: frontend-deployment-blue
   labels:
-    app: todoapp
+    app: frontend
     component: frontend
     color: blue
 spec:
@@ -96,7 +96,7 @@ kind: Deployment
 metadata:
   name: frontend-deployment-green
   labels:
-    app: todoapp
+    app: frontend
     component: frontend
     color: green
 spec:

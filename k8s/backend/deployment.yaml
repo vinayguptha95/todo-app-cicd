@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: backend-deployment
   labels:
-    app: todoapp
+    app: backend
     component: backend
 spec:
   replicas: 2
@@ -63,7 +63,7 @@ kind: Deployment
 metadata:
   name: backend-deployment-blue
   labels:
-    app: todoapp
+    app: backend
     component: backend
     color: blue
 spec:
@@ -106,7 +106,7 @@ kind: Deployment
 metadata:
   name: backend-deployment-green
   labels:
-    app: todoapp
+    app: backend
     component: backend
     color: green
 spec:

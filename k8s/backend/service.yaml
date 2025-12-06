@@ -5,7 +5,8 @@ metadata:
 spec:
   type: ClusterIP
   selector:
-    app: backend    # ← FIXED (removed color: blue)
+    app: backend 
+    color: blue
   ports:
     - protocol: TCP
       port: 5000
