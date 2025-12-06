@@ -3,9 +3,9 @@ kind: Service
 metadata:
   name: backend-service
 spec:
-  type: ClusterIP
+  type: LoadBalancer
   selector:
-    app: backend 
+    app: backend
     color: blue
   ports:
     - protocol: TCP
