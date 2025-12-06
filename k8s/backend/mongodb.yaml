@@ -28,6 +28,8 @@ spec:
         app: mongodb
         component: database
     spec:
+      securityContext:
+        fsGroup: 999          # Ensures MongoDB container can write to PVC
       containers:
       - name: mongodb
         image: mongo:6
@@ -35,7 +37,7 @@ spec:
         - containerPort: 27017
         env:
         - name: MONGO_INITDB_DATABASE
-          value: todoapp       # <-- changed to match backend
+          value: todoapp
         volumeMounts:
         - name: mongodb-storage
           mountPath: /data/db
