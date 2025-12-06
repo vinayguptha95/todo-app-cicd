@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: backend-deployment
   labels:
-    app: todo-app
+    app: backend
     component: backend
 spec:
   replicas: 2
@@ -24,7 +24,7 @@ spec:
     spec:
       containers:
       - name: backend
-        image: placeholder/backend:latest
+        image: todoacr2086.azurecr.io/todo-backend:latest
         ports:
         - containerPort: 5000
         env:
@@ -63,7 +63,7 @@ kind: Deployment
 metadata:
   name: backend-deployment-blue
   labels:
-    app: todo-app
+    app: backend
     component: backend
     color: blue
 spec:
@@ -82,7 +82,7 @@ spec:
     spec:
       containers:
       - name: backend
-        image: placeholder/backend:latest
+        image: todoacr2086.azurecr.io/todo-backend:latest
         ports:
         - containerPort: 5000
         env:
@@ -106,7 +106,7 @@ kind: Deployment
 metadata:
   name: backend-deployment-green
   labels:
-    app: todo-app
+    app: backend
     component: backend
     color: green
 spec:
@@ -125,7 +125,7 @@ spec:
     spec:
       containers:
       - name: backend
-        image: placeholder/backend:latest
+        image: todoacr2086.azurecr.io/todo-backend:latest
         ports:
         - containerPort: 5000
         env:

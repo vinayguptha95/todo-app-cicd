@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-deployment-blue
+  labels:
+    app: backend
+    component: backend
+    color: blue
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend
+      color: blue
+  template:
+    metadata:
+      labels:
+        app: backend
+        component: backend
+        color: blue
+        version: "1.0.0"
+    spec:
+      containers:
+      - name: backend
+        image: todoacr2086.azurecr.io/todo-backend:latest
+        ports:
+        - containerPort: 5000
+        env:
+        - name: PORT
+          value: "5000"
+        - name: MONGODB_URI
+          value: "mongodb://mongodb-service:27017/todoapp"
+        - name: NODE_ENV
+          value: "production"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "250m"
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 5000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 5000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        imagePullPolicy: Always

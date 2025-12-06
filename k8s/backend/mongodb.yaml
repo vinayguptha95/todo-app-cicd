@@ -14,19 +14,22 @@ kind: Deployment
 metadata:
   name: mongodb
   labels:
-    app: todo-app
+    app: todoapp
     component: database
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: mongodb
+      component: database
   template:
     metadata:
       labels:
         app: mongodb
         component: database
     spec:
+      securityContext:
+        fsGroup: 999          # Ensures MongoDB container can write to PVC
       containers:
       - name: mongodb
         image: mongo:6
@@ -55,11 +58,12 @@ kind: Service
 metadata:
   name: mongodb-service
   labels:
-    app: todo-app
+    app: todoapp
     component: database
 spec:
   selector:
     app: mongodb
+    component: database
   ports:
   - port: 27017
     targetPort: 27017

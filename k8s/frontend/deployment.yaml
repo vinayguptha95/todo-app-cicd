@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: frontend-deployment
   labels:
-    app: todo-app
+    app: frontend
     component: frontend
 spec:
   replicas: 2
@@ -24,12 +24,12 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: placeholder/frontend:latest
+        image: todoacr2086.azurecr.io/todo-frontend:latest
         ports:
         - containerPort: 80
         env:
         - name: REACT_APP_API_URL
-          value: "http://backend-service:5000"
+          value: "/api"
         resources:
           requests:
             memory: "64Mi"
@@ -57,7 +57,7 @@ kind: Deployment
 metadata:
   name: frontend-deployment-blue
   labels:
-    app: todo-app
+    app: frontend
     component: frontend
     color: blue
 spec:
@@ -76,12 +76,12 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: placeholder/frontend:latest
+        image: todoacr2086.azurecr.io/todo-frontend:latest
         ports:
         - containerPort: 80
         env:
         - name: REACT_APP_API_URL
-          value: "http://backend-service:5000"
+          value: "/api"
         resources:
           requests:
             memory: "64Mi"
@@ -96,7 +96,7 @@ kind: Deployment
 metadata:
   name: frontend-deployment-green
   labels:
-    app: todo-app
+    app: frontend
     component: frontend
     color: green
 spec:
@@ -115,12 +115,12 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: placeholder/frontend:latest
+        image: todoacr2086.azurecr.io/todo-frontend:latest
         ports:
         - containerPort: 80
         env:
         - name: REACT_APP_API_URL
-          value: "http://backend-service:5000"
+          value: "/api"
         resources:
           requests:
             memory: "64Mi"

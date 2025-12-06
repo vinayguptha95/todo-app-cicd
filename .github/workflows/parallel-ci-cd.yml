@@ -1,0 +1,279 @@
+name: Parallel CI/CD Pipeline
+
+on:
+  push:
+    branches: [main,dev-*]
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - 'k8s/**'
+      - '.github/workflows/parallel-ci-cd.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - 'k8s/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  actions: read
+  contents: read
+  security-events: read
+
+env:
+  ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
+  AKS_RESOURCE_GROUP: ${{ secrets.AKS_RESOURCE_GROUP }}
+  AKS_CLUSTER_NAME: ${{ secrets.AKS_CLUSTER_NAME }}
+
+##########################################################
+# BACKEND PIPELINE
+##########################################################
+jobs:
+  backend:
+    name: "🔧 Backend Pipeline"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "📥 Checkout Code"
+        uses: actions/checkout@v4
+
+      - name: "⚙️ Setup Node.js"
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: "📦 Install Backend Dependencies"
+        run: |
+          cd backend
+          npm ci
+
+      - name: "🏗️ Build Backend"
+        run: |
+          cd backend
+          npm run build || echo "No build script"
+
+      - name: "📦 Upload Backend Artifacts"
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-build
+          path: backend/
+          retention-days: 1
+
+      - name: "🐳 Setup Docker Buildx"
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker-container
+
+      - name: "🔐 Login to Azure Container Registry"
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ secrets.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: "📥 Restore Backend Artifact"
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-build
+          path: backend-restored
+
+      - name: "🏗️ Build and Push Backend Docker Image"
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend-restored/
+          push: true
+          platforms: linux/amd64
+          tags: |
+            ${{ secrets.ACR_LOGIN_SERVER }}/todo-backend:${{ github.sha }}
+            ${{ secrets.ACR_LOGIN_SERVER }}/todo-backend:latest
+
+      - name: "🔍 Trivy Scan Backend"
+        uses: aquasecurity/trivy-action@master
+        continue-on-error: true
+        with:
+          image-ref: '${{ secrets.ACR_LOGIN_SERVER }}/todo-backend:${{ github.sha }}'
+          format: sarif
+          output: trivy-backend-results.sarif
+          severity: HIGH,CRITICAL
+
+##########################################################
+# FRONTEND PIPELINE
+##########################################################
+  frontend:
+    name: "🎨 Frontend Pipeline"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "📥 Checkout Code"
+        uses: actions/checkout@v4
+
+      - name: "⚙️ Setup Node.js"
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: "📦 Install Frontend Dependencies"
+        run: |
+          cd frontend
+          npm ci
+
+      - name: "🏗️ Build Frontend"
+        run: |
+          cd frontend
+          REACT_APP_API_URL=/api CI=false npm run build
+
+      - name: "📦 Upload Frontend Artifacts"
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/
+          retention-days: 1
+
+      - name: "🐳 Setup Docker Buildx"
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker-container
+
+      - name: "🔐 Login to ACR"
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ secrets.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: "📥 Restore Frontend Artifact"
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend-restored
+
+      - name: "🏗️ Build and Push Frontend Image"
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend-restored/
+          push: true
+          platforms: linux/amd64
+          build-args: |
+            REACT_APP_API_URL=/api
+          tags: |
+            ${{ secrets.ACR_LOGIN_SERVER }}/todo-frontend:${{ github.sha }}
+            ${{ secrets.ACR_LOGIN_SERVER }}/todo-frontend:latest
+
+      - name: "🔍 Trivy Scan Frontend"
+        uses: aquasecurity/trivy-action@master
+        continue-on-error: true
+        with:
+          image-ref: '${{ secrets.ACR_LOGIN_SERVER }}/todo-frontend:${{ github.sha }}'
+          format: sarif
+          output: trivy-frontend-results.sarif
+          severity: HIGH,CRITICAL
+
+##########################################################
+# DEPLOYMENT PIPELINE
+##########################################################
+  deploy:
+    name: "🚀 Deploy to AKS"
+    needs: [backend, frontend]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "📥 Checkout Code"
+        uses: actions/checkout@v4
+
+      - name: "🔐 Azure Login"
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: "⚙️ Setup kubectl"
+        uses: azure/setup-kubectl@v3
+
+      - name: "📋 Get AKS Credentials"
+        run: |
+          az aks get-credentials \
+            --resource-group ${{ secrets.AKS_RESOURCE_GROUP }} \
+            --name ${{ secrets.AKS_CLUSTER_NAME }} \
+            --overwrite-existing
+
+      - name: "🗄️ Deploy MongoDB"
+        run: |
+          kubectl apply -f k8s/backend/mongodb.yaml
+          kubectl rollout status deployment/mongodb --timeout=120s
+    
+      - name: "🗄️ Deploy Backend Service"
+        run: |
+            kubectl apply -f k8s/backend/service.yaml
+            kubectl get svc backend-service
+
+
+      - name: "Install yq"
+        run: |
+          sudo wget https://github.com/mikefarah/yq/releases/download/v4.48.1/yq_linux_amd64 -O /usr/bin/yq
+          sudo chmod +x /usr/bin/yq
+
+      - name: "🔵🟢 Blue-Green Backend Deployment"
+        run: |
+             # Detect current active color
+               CURRENT_COLOR=$(kubectl get service backend-service -o jsonpath='{.spec.selector.color}' 2>/dev/null || echo blue)
+                NEW_COLOR=$([ "$CURRENT_COLOR" = blue ] && echo green || echo blue)
+
+                echo "Current color: $CURRENT_COLOR"
+                echo "New color: $NEW_COLOR"
+
+                # Update deployment for new color
+                DEPLOYMENT_FILE="k8s/backend/deployment-$NEW_COLOR.yaml"
+                yq e "(.spec.template.spec.containers[] | select(.name==\"backend\") | .image) = \"${{ secrets.ACR_LOGIN_SERVER }}/todo-backend:${{ github.sha }}\"" -i $DEPLOYMENT_FILE
+                kubectl apply -f $DEPLOYMENT_FILE
+
+                # Wait for rollout to finish
+                kubectl rollout status deployment/backend-deployment-$NEW_COLOR --timeout=300s
+
+                # Switch service to new color
+                kubectl patch service backend-service -p "{\"spec\":{\"selector\":{\"color\":\"$NEW_COLOR\"}}}" --type=Merge
+
+                 # Optionally scale down old color
+                  OLD_COLOR=$([ "$NEW_COLOR" = blue ] && echo green || echo blue)
+                 kubectl scale deployment backend-deployment-$OLD_COLOR --replicas=0 || true
+
+
+      - name: "🗄️ Deploy Frontend Service"
+        run: |
+            kubectl apply -f k8s/frontend/service.yaml
+            kubectl get svc frontend-service
+     
+      - name: "🌐 Deploy Ingress"
+        run: |
+          kubectl apply -f k8s/ingress.yaml
+          kubectl get ingress
+
+
+      - name: "🔵🟢 Blue-Green Frontend Deployment"
+        run: |
+          CURRENT_COLOR=$(kubectl get service frontend-service -o jsonpath='{.spec.selector.color}' 2>/dev/null || echo blue)
+          NEW_COLOR=$([ "$CURRENT_COLOR" = blue ] && echo green || echo blue)
+
+           echo "Current color: $CURRENT_COLOR"
+            echo "New color: $NEW_COLOR"
+
+            DEPLOYMENT_FILE="k8s/frontend/deployment-$NEW_COLOR.yaml"
+
+            yq e "(.spec.template.spec.containers[] | select(.name==\"frontend\") | .image) = \"${{ secrets.ACR_LOGIN_SERVER }}/todo-frontend:${{ github.sha }}\"" -i $DEPLOYMENT_FILE
+
+            kubectl apply -f $DEPLOYMENT_FILE
+            kubectl rollout status deployment/frontend-deployment-$NEW_COLOR --timeout=300s
+
+            kubectl patch service frontend-service -p "{\"spec\":{\"selector\":{\"color\":\"$NEW_COLOR\"}}}" --type=Merge
+
+             # Optionally scale down old color
+
+            OLD_COLOR=$([ "$NEW_COLOR" = blue ] && echo green || echo blue)
+            kubectl scale deployment frontend-deployment-$OLD_COLOR --replicas=0 || true
