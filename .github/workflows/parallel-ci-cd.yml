@@ -128,7 +128,7 @@ jobs:
       - name: "🏗️ Build Frontend"
         run: |
           cd frontend
-          REACT_APP_API_URL=http://backend-service:5000 CI=false npm run build
+          REACT_APP_API_URL=/api CI=false npm run build
 
       - name: "📦 Upload Frontend Artifacts"
         uses: actions/upload-artifact@v4
@@ -162,7 +162,7 @@ jobs:
           push: true
           platforms: linux/amd64
           build-args: |
-            REACT_APP_API_URL=http://backend-service:5000
+            REACT_APP_API_URL=/api
           tags: |
             ${{ secrets.ACR_LOGIN_SERVER }}/todo-frontend:${{ github.sha }}
             ${{ secrets.ACR_LOGIN_SERVER }}/todo-frontend:latest

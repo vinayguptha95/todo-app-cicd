@@ -14,7 +14,7 @@ COPY . .
 RUN chmod +x node_modules/.bin/react-scripts
 
 # Pass the API URL during build
-ARG REACT_APP_API_URL
+ARG REACT_APP_API_URL=/api
 ENV REACT_APP_API_URL=$REACT_APP_API_URL
 
 # Build React app
