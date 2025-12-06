@@ -14,7 +14,7 @@ function App() {
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
 
-  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+  const API_URL = process.env.REACT_APP_API_URL || '/api';
 
   useEffect(() => {
     fetchTodos();
@@ -24,7 +24,7 @@ function App() {
     try {
       setLoading(true);
       setError('');
-      const response = await axios.get(`${API_URL}/api/todos`);
+      const response = await axios.get(`${API_URL}/todos`);
       if (response.data.success) {
         setTodos(response.data.data);
       }
@@ -44,7 +44,7 @@ function App() {
     }
 
     try {
-      const response = await axios.post(`${API_URL}/api/todos`, {
+      const response = await axios.post(`${API_URL}/todos`, {
         title,
         description
       });
@@ -69,7 +69,7 @@ function App() {
 
   const updateTodo = async (id) => {
     try {
-      const response = await axios.put(`${API_URL}/api/todos/${id}`, {
+      const response = await axios.put(`${API_URL}/todos/${id}`, {
         title: editTitle,
         description: editDescription
       });
@@ -95,7 +95,7 @@ function App() {
 
   const toggleComplete = async (id, completed) => {
     try {
-      const response = await axios.put(`${API_URL}/api/todos/${id}`, {
+      const response = await axios.put(`${API_URL}/todos/${id}`, {
         completed: !completed
       });
       
@@ -114,7 +114,7 @@ function App() {
     if (!window.confirm('Are you sure you want to delete this todo?')) return;
     
     try {
-      const response = await axios.delete(`${API_URL}/api/todos/${id}`);
+      const response = await axios.delete(`${API_URL}/todos/${id}`);
       
       if (response.data.success) {
         setTodos(todos.filter(todo => todo._id !== id));
