@@ -128,7 +128,7 @@ jobs:
       - name: "🏗️ Build Frontend"
         run: |
           cd frontend
-          CI=false npm run build
+          REACT_APP_API_URL=http://backend-service:5000 CI=false npm run build
 
       - name: "📦 Upload Frontend Artifacts"
         uses: actions/upload-artifact@v4
@@ -161,6 +161,8 @@ jobs:
           context: ./frontend-restored/
           push: true
           platforms: linux/amd64
+          build-args: |
+            REACT_APP_API_URL=http://backend-service:5000
           tags: |
             ${{ secrets.ACR_LOGIN_SERVER }}/todo-frontend:${{ github.sha }}
             ${{ secrets.ACR_LOGIN_SERVER }}/todo-frontend:latest
@@ -215,8 +217,8 @@ jobs:
 
       - name: "Install yq"
         run: |
-            sudo wget https://github.com/mikefarah/yq/releases/download/v4.48.1/yq_linux_amd64 -O /usr/bin/yq
-             sudo chmod +x /usr/bin/yq
+          sudo wget https://github.com/mikefarah/yq/releases/download/v4.48.1/yq_linux_amd64 -O /usr/bin/yq
+          sudo chmod +x /usr/bin/yq
 
       - name: "🔵🟢 Blue-Green Backend Deployment"
         run: |
@@ -236,10 +238,10 @@ jobs:
                 kubectl rollout status deployment/backend-deployment-$NEW_COLOR --timeout=300s
 
                 # Switch service to new color
-                kubectl patch service backend-service -p "{\"spec\":{\"selector\":{\"color\":\"$NEW_COLOR\"}}}"
+                kubectl patch service backend-service -p "{\"spec\":{\"selector\":{\"color\":\"$NEW_COLOR\"}}}" --type=Merge
 
                  # Optionally scale down old color
-                    OLD_COLOR=$([ "$NEW_COLOR" = blue ] && echo green || echo blue)
+                  OLD_COLOR=$([ "$NEW_COLOR" = blue ] && echo green || echo blue)
                  kubectl scale deployment backend-deployment-$OLD_COLOR --replicas=0 || true
 
 
@@ -263,7 +265,9 @@ jobs:
             kubectl apply -f $DEPLOYMENT_FILE
             kubectl rollout status deployment/frontend-deployment-$NEW_COLOR --timeout=300s
 
-            kubectl patch service frontend-service -p "{\"spec\":{\"selector\":{\"color\":\"$NEW_COLOR\"}}}"
+            kubectl patch service frontend-service -p "{\"spec\":{\"selector\":{\"color\":\"$NEW_COLOR\"}}}" --type=Merge
+
+             # Optionally scale down old color
 
             OLD_COLOR=$([ "$NEW_COLOR" = blue ] && echo green || echo blue)
             kubectl scale deployment frontend-deployment-$OLD_COLOR --replicas=0 || true

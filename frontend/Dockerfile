@@ -10,8 +10,12 @@ RUN npm ci
 # Copy source
 COPY . .
 
-# FIX: react-scripts missing execute permissions
+# Ensure react-scripts executable
 RUN chmod +x node_modules/.bin/react-scripts
+
+# Pass the API URL during build
+ARG REACT_APP_API_URL
+ENV REACT_APP_API_URL=$REACT_APP_API_URL
 
 # Build React app
 RUN npm run build

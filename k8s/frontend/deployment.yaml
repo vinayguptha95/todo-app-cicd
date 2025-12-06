@@ -29,7 +29,7 @@ spec:
         - containerPort: 80
         env:
         - name: REACT_APP_API_URL
-          value: "http://backend-service:5000"
+          value: "/api"
         resources:
           requests:
             memory: "64Mi"
@@ -81,7 +81,7 @@ spec:
         - containerPort: 80
         env:
         - name: REACT_APP_API_URL
-          value: "http://backend-service:5000"
+          value: "/api"
         resources:
           requests:
             memory: "64Mi"
@@ -120,7 +120,7 @@ spec:
         - containerPort: 80
         env:
         - name: REACT_APP_API_URL
-          value: "http://backend-service:5000"
+          value: "/api"
         resources:
           requests:
             memory: "64Mi"
