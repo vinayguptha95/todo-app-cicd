@@ -249,6 +249,12 @@ jobs:
         run: |
             kubectl apply -f k8s/frontend/service.yaml
             kubectl get svc frontend-service
+     
+      - name: "🌐 Deploy Ingress"
+        run: |
+          kubectl apply -f k8s/ingress.yaml
+          kubectl get ingress
+
 
       - name: "🔵🟢 Blue-Green Frontend Deployment"
         run: |
