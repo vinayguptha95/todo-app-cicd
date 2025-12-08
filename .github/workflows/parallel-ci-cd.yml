@@ -234,16 +234,17 @@ jobs:
                 yq e "(.spec.template.spec.containers[] | select(.name==\"backend\") | .image) = \"${{ secrets.ACR_LOGIN_SERVER }}/todo-backend:${{ github.sha }}\"" -i $DEPLOYMENT_FILE
                 kubectl apply -f $DEPLOYMENT_FILE
 
-                # Wait for rollout to finish
-                kubectl rollout status deployment/backend-deployment-$NEW_COLOR --timeout=300s
-
-                # Switch service to new color
-                kubectl patch service backend-service -p "{\"spec\":{\"selector\":{\"color\":\"$NEW_COLOR\"}}}" --type=Merge
-
-                 # Optionally scale down old color
-                  OLD_COLOR=$([ "$NEW_COLOR" = blue ] && echo green || echo blue)
+                # With fix - only executes if rollout succeeds:
+              if kubectl rollout status deployment/backend-deployment-$NEW_COLOR --timeout=300s; then
+                 echo "✅ Deployment successful, switching traffic..."
+                 kubectl patch service backend-service -p "{\"spec\":{\"selector\":{\"color\":\"$NEW_COLOR\"}}}" --type=Merge
+    
+                 OLD_COLOR=$([ "$NEW_COLOR" = blue ] && echo green || echo blue)
                  kubectl scale deployment backend-deployment-$OLD_COLOR --replicas=0 || true
-
+              else
+                echo "❌ Deployment failed! Keeping traffic on $CURRENT_COLOR"
+                exit 1  # Pipeline fails, but old version stays up
+              fi
 
       - name: "🗄️ Deploy Frontend Service"
         run: |
@@ -269,11 +270,14 @@ jobs:
             yq e "(.spec.template.spec.containers[] | select(.name==\"frontend\") | .image) = \"${{ secrets.ACR_LOGIN_SERVER }}/todo-frontend:${{ github.sha }}\"" -i $DEPLOYMENT_FILE
 
             kubectl apply -f $DEPLOYMENT_FILE
-            kubectl rollout status deployment/frontend-deployment-$NEW_COLOR --timeout=300s
-
-            kubectl patch service frontend-service -p "{\"spec\":{\"selector\":{\"color\":\"$NEW_COLOR\"}}}" --type=Merge
-
-             # Optionally scale down old color
-
-            OLD_COLOR=$([ "$NEW_COLOR" = blue ] && echo green || echo blue)
-            kubectl scale deployment frontend-deployment-$OLD_COLOR --replicas=0 || true
+           # With fix - only executes if rollout succeeds:
+          if kubectl rollout status deployment/frontend-deployment-$NEW_COLOR --timeout=300s; then
+             echo "✅ Deployment successful, switching traffic..."
+             kubectl patch service frontend-service -p "{\"spec\":{\"selector\":{\"color\":\"$NEW_COLOR\"}}}" --type=Merge
+    
+             OLD_COLOR=$([ "$NEW_COLOR" = blue ] && echo green || echo blue)
+             kubectl scale deployment frontend-deployment-$OLD_COLOR --replicas=0 || true
+          else
+             echo "❌ Deployment failed! Keeping traffic on $CURRENT_COLOR"
+             exit 1  # Pipeline fails, but old version stays up
+          fi
