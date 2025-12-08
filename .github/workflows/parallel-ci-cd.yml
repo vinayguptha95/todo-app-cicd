@@ -234,7 +234,7 @@ jobs:
                 yq e "(.spec.template.spec.containers[] | select(.name==\"backend\") | .image) = \"${{ secrets.ACR_LOGIN_SERVER }}/todo-backend:${{ github.sha }}\"" -i $DEPLOYMENT_FILE
                 kubectl apply -f $DEPLOYMENT_FILE
 
-                # With fix - only executes if rollout succeeds:
+                #  only executes if rollout succeeds:
               if kubectl rollout status deployment/backend-deployment-$NEW_COLOR --timeout=300s; then
                  echo "✅ Deployment successful, switching traffic..."
                  kubectl patch service backend-service -p "{\"spec\":{\"selector\":{\"color\":\"$NEW_COLOR\"}}}" --type=Merge
@@ -242,8 +242,19 @@ jobs:
                  OLD_COLOR=$([ "$NEW_COLOR" = blue ] && echo green || echo blue)
                  kubectl scale deployment backend-deployment-$OLD_COLOR --replicas=0 || true
               else
-                echo "❌ Deployment failed! Keeping traffic on $CURRENT_COLOR"
-                exit 1  # Pipeline fails, but old version stays up
+                echo "❌ Deployment failed! Rolling back..."
+            
+                # 1. Undo the failed deployment
+                kubectl rollout undo deployment/backend-deployment-$NEW_COLOR
+            
+                # 2. Delete the failed deployment to clean up
+                kubectl delete deployment backend-deployment-$NEW_COLOR --cascade=orphan || true
+            
+                # 3. Ensure old deployment is scaled up
+                kubectl scale deployment backend-deployment-$CURRENT_COLOR --replicas=3
+            
+                echo "✅ Rollback complete. System restored to $CURRENT_COLOR"
+                exit 1
               fi
 
       - name: "🗄️ Deploy Frontend Service"
@@ -278,6 +289,17 @@ jobs:
              OLD_COLOR=$([ "$NEW_COLOR" = blue ] && echo green || echo blue)
              kubectl scale deployment frontend-deployment-$OLD_COLOR --replicas=0 || true
           else
-             echo "❌ Deployment failed! Keeping traffic on $CURRENT_COLOR"
-             exit 1  # Pipeline fails, but old version stays up
+             echo "❌ Deployment failed! Rolling back..."
+            
+             # 1. Undo the failed deployment
+             kubectl rollout undo deployment/frontend-deployment-$NEW_COLOR
+            
+             # 2. Delete the failed deployment to clean up
+             kubectl delete deployment frontend-deployment-$NEW_COLOR --cascade=orphan || true
+            
+             # 3. Ensure old deployment is scaled up
+             kubectl scale deployment frontend-deployment-$CURRENT_COLOR --replicas=3
+            
+             echo "✅ Rollback complete. System restored to $CURRENT_COLOR"
+             exit 1
           fi
